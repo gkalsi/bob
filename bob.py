@@ -8,13 +8,14 @@ import subprocess
 import sys
 
 COLORS = {
-    'OFF' : "\033[1;m",
-    'RED' : "\033[1;31m",
-    'GRN' : "\033[1;32m",
-    'YLO' : "\033[1;33m",
-    'BLU' : "\033[1;34m",
-    'MGN' : "\033[1;35m",
+    'OFF': "\033[1;m",
+    'RED': "\033[1;31m",
+    'GRN': "\033[1;32m",
+    'YLO': "\033[1;33m",
+    'BLU': "\033[1;34m",
+    'MGN': "\033[1;35m",
 }
+
 
 class Resource:
     """A pair of source and target with a shell command that defines
@@ -36,9 +37,9 @@ class Resource:
                 Resource.cache.add_section('hashes')
 
     def __cmdExists(self, cmd):
-        exit_code = subprocess.call(['command', '-v', cmd], 
-                                    shell=True, 
-                                    stdout=subprocess.PIPE, 
+        exit_code = subprocess.call(['command', '-v', cmd],
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
         return exit_code == 0
 
@@ -92,9 +93,9 @@ class Resource:
             for path in self.sources:
                 self.__removeFileHash(path)
         else:
-            subprocess.call("rm -fr {0}".format(self.target), 
-                            shell=True, 
-                            stdout=subprocess.PIPE, 
+            subprocess.call("rm -fr {0}".format(self.target),
+                            shell=True,
+                            stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
 
     def build(self):
@@ -132,29 +133,29 @@ class Resource:
                 requiresRebuild |= self.__requiresRebuild(path)
 
         if not requiresRebuild:
-            print ("%(BLU)s[NOOP]%(OFF)s " % COLORS 
-                + os.path.split(self.target)[-1])
+            print ("%(BLU)s[NOOP]%(OFF)s " % COLORS
+                   + os.path.split(self.target)[-1])
             return True
 
-        print ("%(YLO)s[MAKE]%(OFF)s " % COLORS 
-                + os.path.split(self.target)[-1], end='')
+        print ("%(YLO)s[MAKE]%(OFF)s " % COLORS
+               + os.path.split(self.target)[-1], end='')
         sys.stdout.flush()
 
-        exit_code = subprocess.call(self.cmd, 
-                                    shell=True, 
-                                    stdout=subprocess.PIPE, 
+        exit_code = subprocess.call(self.cmd,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
         success = exit_code == 0
 
         if success:
-            print ("\r%(GRN)s[DONE]%(OFF)s " % COLORS 
-                    + os.path.split(self.target)[-1] + " ")
+            print ("\r%(GRN)s[DONE]%(OFF)s " % COLORS
+                   + os.path.split(self.target)[-1] + " ")
 
             for path in self.sources:
                 h = self.__filemd5(path)
                 self.__setFileHash(path, h)
         else:
-             print ("\r%(RED)s[FAIL]%(OFF)s " % COLORS 
-                    + os.path.split(self.target)[-1] + " ")
+            print ("\r%(RED)s[FAIL]%(OFF)s " % COLORS
+                   + os.path.split(self.target)[-1] + " ")
         sys.stdout.flush()
         return False
