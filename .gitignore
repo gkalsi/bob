@@ -1,3 +1,6 @@
+# Bob cache files
+.bob-cache
+
 *.py[cod]
 
 # C extensions
