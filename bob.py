@@ -37,11 +37,12 @@ class Resource:
                 Resource.cache.add_section('hashes')
 
     def __cmdExists(self, cmd):
-        exit_code = subprocess.call(['command', '-v', cmd],
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-        return exit_code == 0
+        subp = subprocess.Popen(' '.join(['command', '-v', cmd]),
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        subp.communicate()
+        return subp.returncode == 0
 
     def __isHashChanaged(self, path, hash):
         if not Resource.cache:
@@ -93,10 +94,10 @@ class Resource:
             for path in self.sources:
                 self.__removeFileHash(path)
         else:
-            subprocess.call("rm -fr {0}".format(self.target),
-                            shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+            subprocess.Popen("rm -fr {0}".format(self.target),
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
 
     def build(self):
         bin = self.cmd.split()[0]
@@ -134,28 +135,48 @@ class Resource:
 
         if not requiresRebuild:
             print ("%(BLU)s[NOOP]%(OFF)s " % COLORS
-                   + os.path.split(self.target)[-1])
+                + self.cmd.split(' ')[0] + " "
+                + os.path.split(self.target)[-1] + " "
+                + ' '.join(map(lambda x : x[-1],
+                    map(os.path.split,self.sources))))
             return True
 
         print ("%(YLO)s[MAKE]%(OFF)s " % COLORS
-               + os.path.split(self.target)[-1], end='')
+                + self.cmd.split(' ')[0] + " "
+                + os.path.split(self.target)[-1] + " "
+                + ' '.join(map(lambda x : x[-1],
+                    map(os.path.split,self.sources))), end='')
+
         sys.stdout.flush()
 
-        exit_code = subprocess.call(self.cmd,
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-        success = exit_code == 0
+        subp = subprocess.Popen(self.cmd,
+                               shell=True,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        stdout, stderr = subp.communicate()
+        success = subp.returncode == 0
 
         if success:
             print ("\r%(GRN)s[DONE]%(OFF)s " % COLORS
-                   + os.path.split(self.target)[-1] + " ")
+                + self.cmd.split(' ')[0] + " "
+                + os.path.split(self.target)[-1] + " "
+                + ' '.join(map(lambda x : x[-1],
+                    map(os.path.split,self.sources))))
 
             for path in self.sources:
                 h = self.__filemd5(path)
                 self.__setFileHash(path, h)
+
         else:
             print ("\r%(RED)s[FAIL]%(OFF)s " % COLORS
-                   + os.path.split(self.target)[-1] + " ")
+                + self.cmd.split(' ')[0] + " "
+                + os.path.split(self.target)[-1] + " "
+                + ' '.join(map(lambda x : x[-1],
+                    map(os.path.split,self.sources))))
+
+            for line in stdout.splitlines(True):
+                print ("\t" + line, end='')
+            for line in stderr.splitlines(True):
+                print ("\t" + line, end='')
         sys.stdout.flush()
         return False
